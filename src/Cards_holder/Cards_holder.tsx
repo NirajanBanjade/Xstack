@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Cards from '../Cards/Cards';
 import { copyManager } from '../Copy_manager/Copy_manager';
 import type { CopyStack, CopyItem, DuplicateWarning } from '../Types';
 import './Cards_holder.css';
-
-
 
 const Cards_holder: React.FC = () => {
   const [currentStack, setCurrentStack] = useState<CopyStack | null>(null);
@@ -14,57 +12,132 @@ const Cards_holder: React.FC = () => {
   const [showCreateStack, setShowCreateStack] = useState(false);
   const [warning, setWarning] = useState<DuplicateWarning>({ show: false, message: '' });
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
+  const [, setDraggedItem] = useState<CopyItem | null>(null);
+  const [isTransparent, setIsTransparent] = useState(false);
+  // const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastItemCountRef = useRef<number>(0);
 
   useEffect(() => {
-    loadData();
-    
-    // Refresh data when popup becomes visible
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('Popup visible, refreshing data...');
-        loadData();
-      }
+    const loadLatestData = () => {
+      console.log("🔄 Popup opened → fetching latest copy stack");
+      loadData(); // fetches from chrome.storage
     };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Also refresh every 2 seconds while popup is open
-    const refreshInterval = setInterval(() => {
-      if (!document.hidden) {
-        loadData();
-      }
-    }, 2000);
-    
+  
+    // Initial load
+    loadLatestData();
+  
+    // Keyboard shortcuts
+    setupKeyboardShortcuts();
+  
+    // Listen for storage changes (optional if content/background handles it)
+    const handleStorageChange = () => {
+      console.log('🟢 Detected chrome.storage change');
+      loadData();
+    };
+  
+    if (chrome?.storage) {
+      chrome.storage.onChanged.addListener(handleStorageChange);
+    }
+  
+    // Refresh when popup becomes visible
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) loadLatestData();
+    });
+  
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearInterval(refreshInterval);
+      document.removeEventListener('visibilitychange', loadLatestData);
+      if (chrome?.storage) {
+        chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
     };
   }, []);
+  
+  
+
+  const setupKeyboardShortcuts = () => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      // Ctrl+C: Copy current clipboard content to stack
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        setTimeout(() => {
+          handleAutoAddFromClipboard();
+        }, 100);
+      }
+      
+      // Ctrl+V: Paste last item
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && currentStack?.items.length) {
+        e.preventDefault();
+        const lastItem = currentStack.items[0];
+        if (lastItem) {
+          await navigator.clipboard.writeText(lastItem.content);
+          setCopiedItem(lastItem.content);
+          setTimeout(() => setCopiedItem(null), 1000);
+        }
+      }
+      
+      // Ctrl+Shift+T: Toggle transparency
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'T') {
+        e.preventDefault();
+        setIsTransparent(!isTransparent);
+      }
+      
+      // Escape: Close dropdowns
+      if (e.key === 'Escape') {
+        setShowStackSelector(false);
+        setShowCreateStack(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  };
+
+  // const startAutoRefresh = () => {
+  //   // Fast refresh every 500ms to catch new copies immediately
+  //   refreshIntervalRef.current = setInterval(() => {
+  //     if (!document.hidden) {
+  //       loadData();
+  //     }
+  //   }, 500);
+  // };
+
+  // const cleanup = () => {
+  //   document.removeEventListener('keydown', setupKeyboardShortcuts);
+  // };
 
   const loadData = () => {
     const stacks = copyManager.getAllStacks();
     const current = copyManager.getCurrentStack();
+    
+    // Check if new items were added
+    if (current && lastItemCountRef.current < current.items.length) {
+      console.log('New items detected!', current.items.length - lastItemCountRef.current);
+      // Flash effect for new items
+      if (lastItemCountRef.current > 0) {
+        setWarning({
+          show: true,
+          message: `${current.items.length - lastItemCountRef.current} new item(s) added!`,
+        });
+        setTimeout(() => setWarning({ show: false, message: '' }), 2000);
+      }
+    }
+    
+    lastItemCountRef.current = current?.items.length || 0;
     setAllStacks(stacks);
     setCurrentStack(current);
   };
 
-  const handleAddFromClipboard = async () => {
+  const handleAutoAddFromClipboard = async () => {
     try {
-      // Method 1: Try direct clipboard read
       let clipboardText = '';
       
       try {
         clipboardText = await navigator.clipboard.readText();
       } catch (readError) {
-        console.log('Direct clipboard read failed, trying alternative...');
-        
-        // Method 2: Ask user to paste
-        const userText = prompt('Please paste your content here (Ctrl+V):');
-        if (userText) {
-          clipboardText = userText;
-        } else {
-          return; // User cancelled
-        }
+        console.log('Direct clipboard read failed');
+        return;
       }
       
       if (clipboardText?.trim()) {
@@ -93,23 +166,9 @@ const Cards_holder: React.FC = () => {
         }
         
         loadData();
-        
-        // Show success message
-        const addButton = document.querySelector('.add-btn') as HTMLButtonElement;
-        if (addButton) {
-          const originalText = addButton.innerHTML;
-          addButton.innerHTML = '✓ Added';
-          addButton.style.background = 'rgba(34, 197, 94, 0.3)';
-          
-          setTimeout(() => {
-            addButton.innerHTML = originalText;
-            addButton.style.background = '';
-          }, 1500);
-        }
       }
     } catch (error) {
-      console.error('Failed to add from clipboard:', error);
-      alert('Failed to access clipboard. Please try copying the text again.');
+      console.error('Failed to auto-add from clipboard:', error);
     }
   };
 
@@ -154,12 +213,27 @@ const Cards_holder: React.FC = () => {
     }
   };
 
+  const handleDragStart = (item: CopyItem) => {
+    setDraggedItem(item);
+  };
+
   if (!currentStack) {
     return <div className="cards-holder loading">Loading...</div>;
   }
 
   return (
-    <div className="cards-holder">
+    <div className={`cards-holder ${isTransparent ? 'transparent' : ''}`}>
+      {/* Transparency Toggle */}
+      <div className="transparency-controls">
+        <button 
+          className={`transparency-btn ${isTransparent ? 'active' : ''}`}
+          onClick={() => setIsTransparent(!isTransparent)}
+          title="Toggle transparency (Ctrl+Shift+T)"
+        >
+          {isTransparent ? '👁️' : '🔒'}
+        </button>
+      </div>
+
       {/* Header */}
       <div className="stack-header">
         <div className="stack-info">
@@ -231,14 +305,6 @@ const Cards_holder: React.FC = () => {
         
         <div className="header-actions">
           <button 
-            className="header-btn add-btn"
-            onClick={handleAddFromClipboard}
-            title="Add from clipboard"
-          >
-            📋 Add
-          </button>
-
-          <button 
             className="header-btn clear-btn"
             onClick={handleClearStack}
             title="Clear all items"
@@ -246,13 +312,12 @@ const Cards_holder: React.FC = () => {
             🗑️ Clear
           </button>
         </div>
-
       </div>
 
-      {/* Instructions */}
-      <div className="instructions-banner">
-        <span className="instructions-text">
-          💡 Copy text anywhere - it will appear here automatically!
+      {/* Keyboard shortcuts info */}
+      <div className="shortcuts-banner">
+        <span className="shortcuts-text">
+          ⌨️ Ctrl+C: Auto-add | Ctrl+V: Paste last | Drag cards to paste
         </span>
       </div>
 
@@ -277,22 +342,23 @@ const Cards_holder: React.FC = () => {
           <div className="empty-state">
             <div className="empty-icon">📋</div>
             <h3>No items copied yet</h3>
-            <p>Copy some text on any webpage and it will automatically appear here!</p>
+            <p>Copy some text anywhere (Ctrl+C) and it will automatically appear here!</p>
             <div className="empty-instructions">
-              <p><strong>How to use:</strong></p>
-              <p>1. Copy text anywhere (Ctrl+C)</p>
-              <p>2. It appears here automatically</p>
-              <p>3. Click 📋 to copy items back</p>
+              <p><strong>Auto-detection is active:</strong></p>
+              <p>• Copy text anywhere → Appears automatically</p>
+              <p>• Ctrl+V → Pastes last copied item</p>
+              <p>• Drag cards to paste anywhere</p>
+              <p>• Toggle transparency with 👁️ button</p>
             </div>
           </div>
         ) : (
-          // Map through actual copied items
           currentStack.items.map((item: CopyItem) => (
             <Cards
               key={item.id}
               item={item}
               onDelete={handleDeleteItem}
               onCopy={handleCopyItem}
+              onDragStart={handleDragStart}
             />
           ))
         )}
