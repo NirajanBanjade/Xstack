@@ -1,73 +1,130 @@
-/* Cards.css - Clean Glass Morphism Style */
+/* Cards.css - Clean Light Glass with Subtle Sky Blue */
+
 .card {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  border: 1px solid rgba(135, 206, 250, 0.15);
   border-radius: 16px;
   padding: 16px;
   margin: 12px 0;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.03),
+    0 2px 8px rgba(135, 206, 250, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   position: relative;
   overflow: hidden;
 }
 
 .card:hover {
-  background: rgba(255, 255, 255, 0.6);
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 
-    0 12px 48px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(59, 130, 246, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(135, 206, 250, 0.25);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(135, 206, 250, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   transform: translateY(-2px);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 12px;
+  gap: 10px;
+}
+
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
 .card-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   margin: 0;
-  color: rgba(51, 51, 51, 0.9);
+  color: rgba(51, 65, 85, 0.9);
   letter-spacing: -0.2px;
+  line-height: 1.3;
 }
 
-.card-link {
-  font-size: 12px;
-  color: rgba(59, 130, 246, 0.8);
-  text-decoration: none;
+.card-time {
+  font-size: 10px;
+  color: rgba(135, 206, 250, 0.7);
   font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  transition: all 0.2s ease;
+  background: rgba(135, 206, 250, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
 }
 
-.card-link:hover {
-  background: rgba(59, 130, 246, 0.1);
-  color: rgba(59, 130, 246, 1);
-  text-decoration: none;
-  transform: translateY(-1px);
+.card-actions {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.card-action {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(135, 206, 250, 0.2);
+  border-radius: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(6px);
+  color: rgba(51, 65, 85, 0.7);
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-action:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(135, 206, 250, 0.15);
+}
+
+.quick-paste-btn:hover {
+  background: rgba(187, 247, 208, 0.6);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.copy-btn:hover {
+  background: rgba(219, 234, 254, 0.6);
+  border-color: rgba(135, 206, 250, 0.4);
+}
+
+.delete-btn:hover {
+  background: rgba(254, 226, 226, 0.6);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: rgba(239, 68, 68, 0.8);
 }
 
 .card-content {
   font-size: 13px;
-  color: rgba(68, 68, 68, 0.85);
+  color: rgba(51, 65, 85, 0.8);
   line-height: 1.5;
   white-space: pre-wrap;
   max-height: 100px;
   overflow: hidden;
   position: relative;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: rgba(248, 250, 252, 0.4);
+  border-radius: 10px;
+  border: 1px solid rgba(135, 206, 250, 0.08);
+  backdrop-filter: blur(6px);
 }
 
 .card-content::after {
@@ -77,33 +134,105 @@
   left: 0;
   right: 0;
   height: 20px;
-  background: linear-gradient(transparent, rgba(255, 255, 255, 0.4));
+  background: linear-gradient(transparent, 
+    rgba(248, 250, 252, 0.4) 70%,
+    rgba(248, 250, 252, 0.6) 100%);
   pointer-events: none;
+  border-radius: 0 0 10px 10px;
 }
 
-/* Animation */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(135, 206, 250, 0.1);
 }
 
-.card {
-  animation: slideIn 0.4s ease-out;
+.card-link {
+  font-size: 11px;
+  color: rgba(135, 206, 250, 0.8);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: rgba(135, 206, 250, 0.1);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(135, 206, 250, 0.15);
+  transition: all 0.2s ease;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-/* Add these styles to your existing Cards.css file */
 
-/* Latest item styling */
+.card-link:hover {
+  background: rgba(135, 206, 250, 0.15);
+  color: rgba(51, 65, 85, 0.8);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(135, 206, 250, 0.15);
+}
+
+.card-size {
+  font-size: 10px;
+  color: rgba(135, 206, 250, 0.6);
+  background: rgba(135, 206, 250, 0.08);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+.drag-indicator {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(135, 206, 250, 0.12);
+  border: 1px dashed rgba(135, 206, 250, 0.3);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 9px;
+  color: rgba(135, 206, 250, 0.7);
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.card:hover .drag-indicator {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.card.dragging {
+  opacity: 0.7;
+  transform: rotate(3deg) scale(0.97);
+  z-index: 1000;
+}
+
+.card.animating {
+  animation: cardPulse 0.4s ease;
+}
+
+@keyframes cardPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+
+/* Latest Item Styling - Clean & Subtle */
 .card.latest-item {
-  border: 2px solid #3b82f6;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05));
+  border: 2px solid rgba(135, 206, 250, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 8px 24px rgba(135, 206, 250, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   position: relative;
+  overflow: hidden;
 }
 
 .card.latest-item::before {
@@ -113,77 +242,170 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #3b82f6, #6366f1, #8b5cf6);
-  border-radius: 8px 8px 0 0;
+  background: linear-gradient(90deg, 
+    rgba(135, 206, 250, 0.6) 0%, 
+    rgba(147, 197, 253, 0.7) 50%, 
+    rgba(135, 206, 250, 0.6) 100%);
+  border-radius: 16px 16px 0 0;
+  animation: shimmerClean 3s ease-in-out infinite;
 }
 
-/* Card title row for latest badge */
-.card-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* Latest badge */
-.latest-badge {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: white;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
+@keyframes shimmerClean {
   0%, 100% { 
-    transform: scale(1); 
-    opacity: 1; 
+    background: linear-gradient(90deg, 
+      rgba(135, 206, 250, 0.6) 0%, 
+      rgba(147, 197, 253, 0.7) 50%, 
+      rgba(135, 206, 250, 0.6) 100%);
   }
   50% { 
-    transform: scale(1.05); 
-    opacity: 0.9; 
+    background: linear-gradient(90deg, 
+      rgba(147, 197, 253, 0.7) 0%, 
+      rgba(135, 206, 250, 0.8) 50%, 
+      rgba(147, 197, 253, 0.7) 100%);
   }
 }
 
-/* Ctrl+V indicator */
+/* Latest Badge - Clean Style */
+.latest-badge {
+  background: rgba(135, 206, 250, 0.8);
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(135, 206, 250, 0.3);
+  animation: latestPulseClean 2s ease-in-out infinite;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes latestPulseClean {
+  0%, 100% { 
+    transform: scale(1); 
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.02); 
+    opacity: 0.9;
+  }
+}
+
+/* Ctrl+V Indicator - Clean Style */
 .ctrl-v-indicator {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px dashed #3b82f6;
-  border-radius: 6px;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  background: rgba(135, 206, 250, 0.12);
+  border: 1px dashed rgba(135, 206, 250, 0.3);
+  border-radius: 8px;
   padding: 4px 8px;
   text-align: center;
-  font-size: 10px;
-  color: #3b82f6;
+  font-size: 9px;
+  color: rgba(135, 206, 250, 0.8);
   font-weight: 500;
-  animation: fadeInOut 3s infinite;
+  backdrop-filter: blur(6px);
+  animation: ctrlVPulseClean 3s ease-in-out infinite;
 }
 
-@keyframes fadeInOut {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+@keyframes ctrlVPulseClean {
+  0%, 100% { 
+    opacity: 0.6; 
+    background: rgba(135, 206, 250, 0.12);
+  }
+  50% { 
+    opacity: 1; 
+    background: rgba(135, 206, 250, 0.18);
+  }
 }
 
-/* Adjust card padding to accommodate the indicator */
+/* Adjust padding for latest item to accommodate indicator */
 .card.latest-item {
   padding-bottom: 35px;
 }
 
-/* Hover effects for latest item */
+/* Enhanced hover effects for latest item */
 .card.latest-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+  transform: translateY(-3px);
+  box-shadow:
+    0 12px 32px rgba(135, 206, 250, 0.15),
+    0 6px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  border-color: rgba(135, 206, 250, 0.4);
 }
 
 /* Make the drag indicator less prominent for latest item */
 .card.latest-item .drag-indicator {
+  opacity: 0.4;
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(135, 206, 250, 0.2);
+}
+
+.card.latest-item:hover .drag-indicator {
   opacity: 0.7;
+}
+
+/* Enhanced Animation Entry */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card {
+  animation: slideIn 0.4s ease-out;
+}
+
+/* Staggered animation for multiple cards */
+.card:nth-child(1) { animation-delay: 0ms; }
+.card:nth-child(2) { animation-delay: 50ms; }
+.card:nth-child(3) { animation-delay: 100ms; }
+.card:nth-child(4) { animation-delay: 150ms; }
+.card:nth-child(5) { animation-delay: 200ms; }
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .card {
+    padding: 14px;
+    margin: 10px 0;
+  }
+  
+  .card-actions {
+    gap: 3px;
+  }
+  
+  .card-action {
+    padding: 5px 6px;
+    min-width: 26px;
+    height: 26px;
+  }
+}
+
+/* Focus states for accessibility */
+.card-action:focus,
+.card-link:focus {
+  outline: 2px solid rgba(135, 206, 250, 0.5);
+  outline-offset: 2px;
+}
+
+/* Clean print styles */
+@media print {
+  .card {
+    break-inside: avoid;
+    background: white;
+    border: 1px solid #ddd;
+    box-shadow: none;
+  }
+  
+  .card-actions,
+  .drag-indicator,
+  .ctrl-v-indicator {
+    display: none;
+  }
 }
