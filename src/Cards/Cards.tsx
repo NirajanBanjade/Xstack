@@ -7,7 +7,7 @@ interface CardProps {
   onDelete: (id: string) => void;
   onCopy: (content: string) => void;
   onDragStart: (item: CopyItem) => void;
-  isLatest?: boolean; // Add this line to fix the red underline
+  isLatest?: boolean;
 }
 
 const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLatest = false }) => {
@@ -26,6 +26,39 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
     return 'just now';
   };
 
+  // Format URL for display - shortened version
+  const getDisplayUrl = (url: string): string => {
+    if (!url || url === 'extension' || url === 'unknown') {
+      return item.source.title || 'Manual Entry';
+    }
+    
+    try {
+      const urlObj = new URL(url);
+      let displayUrl = urlObj.hostname + urlObj.pathname;
+      
+      // Truncate if too long
+      if (displayUrl.length > 35) {
+        displayUrl = displayUrl.substring(0, 32) + '...';
+      }
+      
+      return displayUrl;
+    } catch {
+      // If URL is invalid, fallback to title or shortened raw url
+      return item.source.title || (url.length > 35 ? url.substring(0, 32) + '...' : url);
+    }
+  };
+
+  // Check if URL is valid and clickable
+  const isValidUrl = (url: string): boolean => {
+    if (!url || url === 'extension' || url === 'unknown' || url === '') return false;
+    try {
+      new URL(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch {
+      return false;
+    }
+  };
+
   const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -33,10 +66,8 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
     setIsAnimating(true);
     
     try {
-      // Direct clipboard write
       await navigator.clipboard.writeText(item.content);
       
-      // Visual feedback
       const button = e.currentTarget as HTMLButtonElement;
       const originalText = button.innerHTML;
       button.innerHTML = '✓';
@@ -52,7 +83,6 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
     } catch (error) {
       console.error('Copy failed:', error);
       
-      // Fallback method
       try {
         const textarea = document.createElement('textarea');
         textarea.value = item.content;
@@ -64,7 +94,6 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
         document.body.removeChild(textarea);
         onCopy(item.content);
       } catch (fallbackError) {
-        // Chrome extension API fallback
         chrome.runtime.sendMessage({
           action: 'copyToClipboard',
           text: item.content
@@ -80,7 +109,6 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
     e.dataTransfer.effectAllowed = 'copy';
     onDragStart(item);
     
-    // Create custom drag image
     const dragImage = document.createElement('div');
     dragImage.innerHTML = `
       <div style="
@@ -119,49 +147,12 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
     return content.substring(0, maxLength) + '...';
   };
 
-  const handleQuickPaste = async (e: React.MouseEvent) => {
+  const handleTitleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    try {
-      // Copy to clipboard first
-      await navigator.clipboard.writeText(item.content);
-      
-      // Try to paste to active element
-      const activeElement = document.activeElement as HTMLInputElement | HTMLTextAreaElement;
-      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
-        const start = activeElement.selectionStart || 0;
-        const end = activeElement.selectionEnd || 0;
-        const value = activeElement.value;
-        
-        activeElement.value = value.substring(0, start) + item.content + value.substring(end);
-        activeElement.selectionStart = activeElement.selectionEnd = start + item.content.length;
-        activeElement.focus();
-        
-        // Trigger input event
-        activeElement.dispatchEvent(new Event('input', { bubbles: true }));
-      } else {
-        // Simulate Ctrl+V
-        document.dispatchEvent(new KeyboardEvent('keydown', {
-          key: 'v',
-          ctrlKey: true,
-          bubbles: true
-        }));
-      }
-      
-      // Visual feedback
-      const button = e.currentTarget as HTMLButtonElement;
-      const originalText = button.innerHTML;
-      button.innerHTML = '✓';
-      button.style.background = 'rgba(34, 197, 94, 0.3)';
-      
-      setTimeout(() => {
-        button.innerHTML = originalText;
-        button.style.background = '';
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Quick paste failed:', error);
+    if (isValidUrl(item.source.url)) {
+      window.open(item.source.url, '_blank', 'noreferrer');
     }
   };
 
@@ -175,7 +166,22 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
       <div className="card-header">
         <div className="card-info">
           <div className="card-title-row">
-            <h3 className="card-title">{item.source.title || 'Untitled'}</h3>
+            {isValidUrl(item.source.url) ? (
+              <a 
+                href={item.source.url}
+                target="_blank"
+                rel="noreferrer"
+                className="card-title-link"
+                onClick={handleTitleClick}
+                title={`Visit: ${item.source.url}`}
+              >
+                {getDisplayUrl(item.source.url)}
+              </a>
+            ) : (
+              <span className="card-title">
+                {getDisplayUrl(item.source.url)}
+              </span>
+            )}
             {isLatest && (
               <span className="latest-badge" title="Will be pasted with Ctrl+V">
                 🚀 Latest
@@ -185,14 +191,6 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
           <span className="card-time">{getTimeAgo(item.timestamp)}</span>
         </div>
         <div className="card-actions">
-          <button 
-            className="card-action quick-paste-btn" 
-            onClick={handleQuickPaste}
-            onMouseDown={(e) => e.preventDefault()}
-            title="Quick paste"
-          >
-            📥
-          </button>
           <button 
             className="card-action copy-btn" 
             onClick={handleCopy}

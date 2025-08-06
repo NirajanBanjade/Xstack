@@ -1,4 +1,4 @@
-/* Cards_holder.css - Clean Light Glass with Minimal Sky Blue */
+
 
 .cards-holder {
   width: 360px;
@@ -498,6 +498,8 @@
   opacity: 0.75;
   background: rgba(255, 255, 255, 0.7);
 }
+
+
 
 .cards-holder.transparent:hover {
   opacity: 0.9;

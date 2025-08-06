@@ -14,7 +14,6 @@ const Cards_holder: React.FC = () => {
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
   const [, setDraggedItem] = useState<CopyItem | null>(null);
   const [isTransparent, setIsTransparent] = useState(false);
-  // const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastItemCountRef = useRef<number>(0);
 
   useEffect(() => {
@@ -38,6 +37,18 @@ const Cards_holder: React.FC = () => {
     if (chrome?.storage) {
       chrome.storage.onChanged.addListener(handleStorageChange);
     }
+    
+    // Listen for stack updates from background script
+    const handleMessage = (message: any) => {
+      if (message.action === 'stackUpdated') {
+        console.log('🔄 Stack updated, refreshing data');
+        loadData();
+      }
+    };
+    
+    if (chrome?.runtime) {
+      chrome.runtime.onMessage.addListener(handleMessage);
+    }
   
     // Refresh when popup becomes visible
     document.addEventListener('visibilitychange', () => {
@@ -48,6 +59,9 @@ const Cards_holder: React.FC = () => {
       document.removeEventListener('visibilitychange', loadLatestData);
       if (chrome?.storage) {
         chrome.storage.onChanged.removeListener(handleStorageChange);
+      }
+      if (chrome?.runtime) {
+        chrome.runtime.onMessage.removeListener(handleMessage);
       }
     };
   }, []);
@@ -63,14 +77,23 @@ const Cards_holder: React.FC = () => {
         }, 100);
       }
       
-      // Ctrl+V: Paste last item
+      // Ctrl+V: Paste latest item and remove it from stack (like normal clipboard behavior)
       if ((e.ctrlKey || e.metaKey) && e.key === 'v' && currentStack?.items.length) {
         e.preventDefault();
-        const lastItem = currentStack.items[0];
-        if (lastItem) {
-          await navigator.clipboard.writeText(lastItem.content);
-          setCopiedItem(lastItem.content);
-          setTimeout(() => setCopiedItem(null), 1000);
+        const latestItem = currentStack.items[0]; // First item is the most recent
+        if (latestItem) {
+          try {
+            await navigator.clipboard.writeText(latestItem.content);
+            setCopiedItem(latestItem.content);
+            
+            // Remove the item from stack since we're "using" it
+            copyManager.deleteItem(latestItem.id);
+            loadData(); // Refresh the display
+            
+            setTimeout(() => setCopiedItem(null), 1000);
+          } catch (error) {
+            console.error('Failed to paste latest item:', error);
+          }
         }
       }
       
@@ -93,19 +116,6 @@ const Cards_holder: React.FC = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   };
-
-  // const startAutoRefresh = () => {
-  //   // Fast refresh every 500ms to catch new copies immediately
-  //   refreshIntervalRef.current = setInterval(() => {
-  //     if (!document.hidden) {
-  //       loadData();
-  //     }
-  //   }, 500);
-  // };
-
-  // const cleanup = () => {
-  //   document.removeEventListener('keydown', setupKeyboardShortcuts);
-  // };
 
   const loadData = () => {
     const stacks = copyManager.getAllStacks();
@@ -317,7 +327,7 @@ const Cards_holder: React.FC = () => {
       {/* Keyboard shortcuts info */}
       <div className="shortcuts-banner">
         <span className="shortcuts-text">
-          ⌨️ Ctrl+C: Auto-add | Ctrl+V: Paste last | Drag cards to paste
+          ⌨️ Ctrl+C: Auto-add | Ctrl+V: Paste latest & remove | Drag cards to paste
         </span>
       </div>
 
@@ -346,19 +356,20 @@ const Cards_holder: React.FC = () => {
             <div className="empty-instructions">
               <p><strong>Auto-detection is active:</strong></p>
               <p>• Copy text anywhere → Appears automatically</p>
-              <p>• Ctrl+V → Pastes last copied item</p>
+              <p>• Ctrl+V → Pastes latest item & removes it from stack</p>
               <p>• Drag cards to paste anywhere</p>
               <p>• Toggle transparency with 👁️ button</p>
             </div>
           </div>
         ) : (
-          currentStack.items.map((item: CopyItem) => (
+          currentStack.items.map((item: CopyItem, index: number) => (
             <Cards
               key={item.id}
               item={item}
               onDelete={handleDeleteItem}
               onCopy={handleCopyItem}
               onDragStart={handleDragStart}
+              isLatest={index === 0} // Mark the first item as latest
             />
           ))
         )}
