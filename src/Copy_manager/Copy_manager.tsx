@@ -164,10 +164,19 @@ export class CopyManager {
   // Delete item from current stack
   deleteItem(itemId: string) {
     const currentStack = this.getCurrentStack();
+    const mostRecentId = currentStack.items[0]?.id;
+  
+    // Prevent deletion of the most recent item
+    if (itemId === mostRecentId) {
+      alert('Cannot delete the most recent copied item. This goes against system settings.');
+      return;
+    }
+  
     currentStack.items = currentStack.items.filter(item => item.id !== itemId);
     currentStack.lastModified = Date.now();
     this.saveToStorage();
   }
+  
 
   // Delete entire stack
   deleteStack(stackId: string) {
