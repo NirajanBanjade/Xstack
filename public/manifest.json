@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Clippy-CSX",
+  "name": "Xstack",
   "version": "1.0.0",
   "description": "Copy more. Paste smarter.",
   "action": {
     "default_popup": "index.html",
-    "default_title": "Clippy"
+    "default_title": "Xstack"
   },
   "permissions": [
     "storage",
