@@ -183,14 +183,20 @@ async function addToCopyStack(content, source = {}, options = {}) {
           console.log('⚠️ Recent duplicate content, skipping');
           return false;
         } else {
-          // Update existing item
+          // FIXED: Keep original source, only update timestamp and move to top
+          console.log('♻️ Found existing item, moving to top without changing source URL');
+          console.log('📍 Keeping original source:', exactDuplicate.source.url);
+          
+          // Only update timestamp, keep original source info
           exactDuplicate.timestamp = now;
-          exactDuplicate.source = enhanceSourceInfo(source);
+          
+          // Remove from current position and add to top
           currentStack.items = currentStack.items.filter(item => item.id !== exactDuplicate.id);
           currentStack.items.unshift(exactDuplicate);
-          console.log('♻️ Updated existing item timestamp');
+          
+          console.log('✅ Moved existing item to top, preserved original URL');
         }
-      } else {
+      }else {
         // Check similarity only for recent items (last 10 items)
         const recentItems = currentStack.items.slice(0, 10);
         const similarity = findMostSimilar(trimmedContent, recentItems);

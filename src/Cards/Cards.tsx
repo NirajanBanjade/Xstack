@@ -26,38 +26,66 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
     return 'just now';
   };
 
-  // Format URL for display - shortened version
-  const getDisplayUrl = (url: string): string => {
-    if (!url || url === 'extension' || url === 'unknown') {
-      return item.source.title || 'Manual Entry';
+  // Enhanced URL display logic - display shortened url.
+  const getDisplayInfo = () => {
+    const source = item.source;
+    
+    // Handle extension/manual entries
+    if (!source.url || source.url === 'extension' || source.url === 'unknown' || source.url === '') {
+      return {
+        displayText: source.title || 'Manual Entry',
+        fullUrl: null,
+        isClickable: false,
+        hostname: 'Extension'
+      };
     }
     
     try {
-      const urlObj = new URL(url);
-      let displayUrl = urlObj.hostname + urlObj.pathname;
+      const urlObj = new URL(source.url);
+      const hostname = urlObj.hostname.replace(/^www\./, '');
+      
+      // Create a readable display URL
+      let displayPath = urlObj.pathname;
+      if (displayPath === '/') displayPath = '';
+      
+      let displayText = hostname + displayPath;
       
       // Truncate if too long
-      if (displayUrl.length > 35) {
-        displayUrl = displayUrl.substring(0, 32) + '...';
+      if (displayText.length > 35) {
+        displayText = displayText.substring(0, 32) + '...';
       }
       
-      return displayUrl;
-    } catch {
-      // If URL is invalid, fallback to title or shortened raw url
-      return item.source.title || (url.length > 35 ? url.substring(0, 32) + '...' : url);
+      // If there's a meaningful title that's different from URL, prefer it
+      if (source.title && 
+          source.title !== 'Untitled' && 
+          source.title !== 'Unknown Page' && 
+          source.title !== hostname &&
+          source.title.length < 40) {
+        displayText = source.title;
+      }
+      
+      return {
+        displayText,
+        fullUrl: source.url,
+        isClickable: true,
+        hostname: hostname
+      };
+      
+    } catch (e) {
+      // Invalid URL, fallback to title or shortened version
+      const fallbackText = source.title || 
+                          (source.url.length > 35 ? source.url.substring(0, 32) + '...' : source.url);
+      
+      return {
+        displayText: fallbackText,
+        fullUrl: null,
+        isClickable: false,
+        hostname: source.hostname || 'Unknown'
+      };
     }
   };
 
-  // Check if URL is valid and clickable
-  const isValidUrl = (url: string): boolean => {
-    if (!url || url === 'extension' || url === 'unknown' || url === '') return false;
-    try {
-      new URL(url);
-      return url.startsWith('http://') || url.startsWith('https://');
-    } catch {
-      return false;
-    }
-  };
+  const displayInfo = getDisplayInfo();
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -151,9 +179,22 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
     e.preventDefault();
     e.stopPropagation();
     
-    if (isValidUrl(item.source.url)) {
-      window.open(item.source.url, '_blank', 'noreferrer');
+    if (displayInfo.isClickable && displayInfo.fullUrl) {
+      window.open(displayInfo.fullUrl, '_blank', 'noreferrer');
     }
+  };
+
+  // Add debug info for development
+  const getDebugInfo = () => {
+    if (process.env.NODE_ENV === 'development') {
+      const method = item.source.method || item.source.detectionMethod || 'unknown';
+      return (
+        <div style={{ fontSize: '10px', opacity: 0.5, marginTop: '4px' }}>
+          Debug: {item.source.url} | Method: {method}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -166,20 +207,20 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
       <div className="card-header">
         <div className="card-info">
           <div className="card-title-row">
-            {isValidUrl(item.source.url) ? (
+            {displayInfo.isClickable ? (
               <a 
-                href={item.source.url}
+                href={displayInfo.fullUrl || '#'}
                 target="_blank"
                 rel="noreferrer"
                 className="card-title-link"
                 onClick={handleTitleClick}
-                title={`Visit: ${item.source.url}`}
+                title={`Visit: ${displayInfo.fullUrl}`}
               >
-                {getDisplayUrl(item.source.url)}
+                {displayInfo.displayText}
               </a>
             ) : (
-              <span className="card-title">
-                {getDisplayUrl(item.source.url)}
+              <span className="card-title" title={displayInfo.displayText}>
+                {displayInfo.displayText}
               </span>
             )}
             {isLatest && (
@@ -212,16 +253,25 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
       <p className="card-content">{getPreviewContent(item.content)}</p>
       
       <div className="card-footer">
-        <a 
-          href={item.source.url} 
-          target="_blank" 
-          rel="noreferrer" 
-          className="card-link"
-        >
-          {item.source.hostname}
-        </a>
+        {displayInfo.isClickable && displayInfo.fullUrl ? (
+          <a 
+            href={displayInfo.fullUrl} 
+            target="_blank" 
+            rel="noreferrer" 
+            className="card-link"
+            title={displayInfo.fullUrl}
+          >
+            {displayInfo.hostname}
+          </a>
+        ) : (
+          <span className="card-link-disabled" title="No valid URL">
+            {displayInfo.hostname}
+          </span>
+        )}
         <span className="card-size">{item.content.length} chars</span>
       </div>
+      
+      {getDebugInfo()}
       
       <div className="drag-indicator">
         <span>🖱️ Drag to paste anywhere</span>

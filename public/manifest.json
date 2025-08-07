@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "CSX - Copy Stack Extension",
+  "name": "Clippy-CSX",
   "version": "1.0.0",
-  "description": "A beautiful clipboard manager with glass morphism design",
+  "description": "Copy more. Paste smarter.",
   "action": {
     "default_popup": "index.html",
-    "default_title": "Copy Stack Extension"
+    "default_title": "Clippy"
   },
   "permissions": [
     "storage",
