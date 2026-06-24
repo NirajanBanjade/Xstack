@@ -107,6 +107,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               });
             },
             args: [message.text]
+          }).catch(error => {
+            console.warn('Could not run clipboard fallback:', error);
           });
         }
       });
@@ -121,7 +123,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'checkClipboardContent') {
     if (message.content !== lastClipboardContent) {
       lastClipboardContent = message.content;
-      addToCopyStack(message.content, message.source);
+      void addToCopyStack(message.content, message.source).catch(error => {
+        console.warn('Could not add checked clipboard content:', error);
+      });
     }
     sendResponse({ success: true });
     return true;
@@ -255,8 +259,8 @@ async function addToCopyStack(content, source = {}, options = {}) {
       
       // Notify popup if it's open
       try {
-        chrome.runtime.sendMessage({ action: 'stackUpdated' });
-      } catch (e) {
+        await chrome.runtime.sendMessage({ action: 'stackUpdated' });
+      } catch {
         // Popup might not be open, that's fine
       }
       
@@ -339,6 +343,8 @@ async function monitorClipboard() {
                   title: document.title,
                   hostname: window.location.hostname
                 }
+              }).catch(() => {
+                // The extension may have been reloaded while this page was open.
               });
             }
           } catch (error) {
@@ -404,8 +410,8 @@ async function removeLatestItem() {
       
       // Notify popup if it's open
       try {
-        chrome.runtime.sendMessage({ action: 'stackUpdated' });
-      } catch (e) {
+        await chrome.runtime.sendMessage({ action: 'stackUpdated' });
+      } catch {
         // Popup might not be open, that's fine
       }
       

@@ -71,7 +71,7 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
         hostname: hostname
       };
       
-    } catch (e) {
+    } catch {
       // Invalid URL, fallback to title or shortened version
       const fallbackText = source.title || 
                           (source.url.length > 35 ? source.url.substring(0, 32) + '...' : source.url);
@@ -121,11 +121,15 @@ const Cards: React.FC<CardProps> = ({ item, onDelete, onCopy, onDragStart, isLat
         document.execCommand('copy');
         document.body.removeChild(textarea);
         onCopy(item.content);
-      } catch (fallbackError) {
-        chrome.runtime.sendMessage({
-          action: 'copyToClipboard',
-          text: item.content
-        });
+      } catch {
+        try {
+          await chrome.runtime.sendMessage({
+            action: 'copyToClipboard',
+            text: item.content
+          });
+        } catch (messageError) {
+          console.error('Clipboard fallback failed:', messageError);
+        }
       }
       setIsAnimating(false);
     }

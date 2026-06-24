@@ -67,7 +67,7 @@ export class CopyManager {
       currentStack.items = currentStack.items.slice(0, 100);
     }
 
-    this.saveToStorage();
+    void this.saveToStorage();
 
     if (similarItem) {
       return {
@@ -140,7 +140,7 @@ export class CopyManager {
     };
     
     this.stacks.set(stackId, newStack);
-    this.saveToStorage();
+    void this.saveToStorage();
     return stackId;
   }
 
@@ -174,7 +174,7 @@ export class CopyManager {
   
     currentStack.items = currentStack.items.filter(item => item.id !== itemId);
     currentStack.lastModified = Date.now();
-    this.saveToStorage();
+    void this.saveToStorage();
   }
   
 
@@ -185,7 +185,7 @@ export class CopyManager {
       if (this.currentStackId === stackId) {
         this.currentStackId = 'default';
       }
-      this.saveToStorage();
+      void this.saveToStorage();
     }
   }
 
@@ -194,7 +194,7 @@ export class CopyManager {
     const currentStack = this.getCurrentStack();
     currentStack.items = [];
     currentStack.lastModified = Date.now();
-    this.saveToStorage();
+    void this.saveToStorage();
   }
 
   // Utility methods
@@ -232,15 +232,19 @@ export class CopyManager {
   }
 
   private async saveToStorage() {
-    const data = {
-      stacks: Array.from(this.stacks.entries()),
-      currentStackId: this.currentStackId
-    };
-    
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      await chrome.storage.local.set({ copyStacks: data });
-    } else {
-      localStorage.setItem('copyStacks', JSON.stringify(data));
+    try {
+      const data = {
+        stacks: Array.from(this.stacks.entries()),
+        currentStackId: this.currentStackId
+      };
+
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        await chrome.storage.local.set({ copyStacks: data });
+      } else {
+        localStorage.setItem('copyStacks', JSON.stringify(data));
+      }
+    } catch (error) {
+      console.error('Failed to save copy stacks:', error);
     }
   }
 
