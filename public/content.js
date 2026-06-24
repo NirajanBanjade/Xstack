@@ -1,6 +1,12 @@
 // Enhanced content.js - Improved clipboard detection
 console.log('Enhanced Copy Stack content script loaded on:', window.location.hostname);
 
+// Avoid duplicate listeners when this is injected into an already-open page.
+if (window.__xstackContentScriptLoaded) {
+  console.log('Xstack content script is already active on this page');
+} else {
+window.__xstackContentScriptLoaded = true;
+
 let lastCopiedContent = '';
 let isExtensionActive = true;
 let clipboardCheckInterval;
@@ -12,7 +18,9 @@ async function checkExtensionStatus() {
     isExtensionActive = response?.active || false;
     console.log('Extension status:', isExtensionActive ? 'Active' : 'Inactive');
   } catch (error) {
-    isExtensionActive = false;
+    // A sleeping/restarting service worker can make this initial request fail.
+    // Keep capture enabled and let later messages update the status.
+    isExtensionActive = true;
   }
 }
 
@@ -144,16 +152,10 @@ async function checkClipboardContent() {
     
     if (clipText && clipText.trim() && clipText.trim() !== lastCopiedContent) {
       const trimmedText = clipText.trim();
-      
-      // Skip very short or common content
-      if (trimmedText.length >= 3 && 
-          !trimmedText.match(/^[a-zA-Z]$/) &&
-          !trimmedText.match(/^\d+$/) &&
-          !trimmedText.match(/^[!@#$%^&*(),.?":{}|<>]+$/)) {
-        
-        console.log('📋 New clipboard content detected via polling');
-        processNewCopy(trimmedText);
-      }
+
+      // Capture all non-empty text, including one character, numbers, and punctuation.
+      console.log('📋 New clipboard content detected via polling');
+      processNewCopy(trimmedText);
     }
   } catch (error) {
     // Silent fail - clipboard access restrictions are normal
@@ -445,4 +447,4 @@ document.addEventListener('visibilitychange', () => {
 });
 
 console.log('✅ Enhanced content script ready - automatic clipboard detection enabled!');
-
+}

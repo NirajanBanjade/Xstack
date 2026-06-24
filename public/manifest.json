@@ -4,11 +4,14 @@
   "version": "1.0.0",
   "description": "Copy more. Paste smarter.",
   "action": {
-    "default_popup": "index.html",
     "default_title": "Xstack"
+  },
+  "side_panel": {
+    "default_path": "index.html"
   },
   "permissions": [
     "storage",
+    "sidePanel",
     "clipboardRead", 
     "clipboardWrite",
     "activeTab",

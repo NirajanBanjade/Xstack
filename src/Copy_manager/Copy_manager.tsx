@@ -7,8 +7,8 @@ export class CopyManager {
   private currentStackId: string = 'default';
   
   constructor() {
-    this.loadFromStorage();
     this.initializeDefaultStack();
+    void this.reloadFromStorage();
   }
 
   // Initialize default stack
@@ -226,6 +226,11 @@ export class CopyManager {
   }
 
   // Storage methods
+  async reloadFromStorage() {
+    await this.loadFromStorage();
+    this.initializeDefaultStack();
+  }
+
   private async saveToStorage() {
     const data = {
       stacks: Array.from(this.stacks.entries()),

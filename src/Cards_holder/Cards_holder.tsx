@@ -17,21 +17,26 @@ const Cards_holder: React.FC = () => {
   const lastItemCountRef = useRef<number>(0);
 
   useEffect(() => {
-    const loadLatestData = () => {
-      console.log("🔄 Popup opened → fetching latest copy stack");
-      loadData(); // fetches from chrome.storage
+    const loadLatestData = async () => {
+      console.log("🔄 Side panel opened → fetching latest copy stack");
+      await copyManager.reloadFromStorage();
+      loadData();
     };
   
     // Initial load
-    loadLatestData();
+    void loadLatestData();
   
     // Keyboard shortcuts
-    setupKeyboardShortcuts();
+    const removeKeyboardShortcuts = setupKeyboardShortcuts();
   
-    // Listen for storage changes (optional if content/background handles it)
-    const handleStorageChange = () => {
+    // Keep the side panel synchronized with copies saved by page/background scripts.
+    const handleStorageChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== 'local' || !changes.copyStacks) return;
       console.log('🟢 Detected chrome.storage change');
-      loadData();
+      void loadLatestData();
     };
   
     if (chrome?.storage) {
@@ -39,10 +44,10 @@ const Cards_holder: React.FC = () => {
     }
     
     // Listen for stack updates from background script
-    const handleMessage = (message: any) => {
+    const handleMessage = (message: { action?: string }) => {
       if (message.action === 'stackUpdated') {
         console.log('🔄 Stack updated, refreshing data');
-        loadData();
+        void loadLatestData();
       }
     };
     
@@ -50,13 +55,14 @@ const Cards_holder: React.FC = () => {
       chrome.runtime.onMessage.addListener(handleMessage);
     }
   
-    // Refresh when popup becomes visible
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) loadLatestData();
-    });
+    const handleVisibilityChange = () => {
+      if (!document.hidden) void loadLatestData();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
   
     return () => {
-      document.removeEventListener('visibilitychange', loadLatestData);
+      removeKeyboardShortcuts();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (chrome?.storage) {
         chrome.storage.onChanged.removeListener(handleStorageChange);
       }
@@ -64,6 +70,8 @@ const Cards_holder: React.FC = () => {
         chrome.runtime.onMessage.removeListener(handleMessage);
       }
     };
+    // The keyboard handler is installed once for the lifetime of the side panel.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   
@@ -145,7 +153,7 @@ const Cards_holder: React.FC = () => {
       
       try {
         clipboardText = await navigator.clipboard.readText();
-      } catch (readError) {
+      } catch {
         console.log('Direct clipboard read failed');
         return;
       }

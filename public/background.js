@@ -2,8 +2,13 @@ console.log('Enhanced Copy Stack background script starting...');
 
 let extensionActive = true;
 
+// Keep Xstack open as a browser side panel when its toolbar icon is clicked.
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch(error => console.warn('Could not configure side panel behavior:', error));
+
 // === CONTEXT MENU SETUP ===
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   console.log('✓ Copy Stack Extension installed');
 
   try {
@@ -23,6 +28,20 @@ chrome.runtime.onInstalled.addListener(() => {
   } catch (error) {
     console.log('Context menu creation failed:', error);
   }
+
+  // Manifest content scripts only load automatically on the next navigation.
+  // Inject into tabs that were already open when the extension was installed/reloaded.
+  const tabs = await chrome.tabs.query({});
+  await Promise.allSettled(tabs.map(tab => {
+    if (!tab.id || !/^https?:/.test(tab.url || '')) {
+      return Promise.resolve();
+    }
+
+    return chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ['content.js']
+    });
+  }));
 });
 
 // === SINGLE MESSAGE HANDLER ===
